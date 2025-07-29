@@ -66,7 +66,7 @@ class OllamaInfluxTranslator:
         self.logger.info("Attempting to find OLLAMA_MODELS path from journal logs...")
         try:
             result = subprocess.run(
-                ['sudo', 'journalctl', '-u', 'ollama.service', '-n', '200', '--no-pager'],
+                ['sudo', 'journalctl', '--unit=ollama.service', '-n', '200', '--no-pager'],
                 capture_output=True, text=True, check=True
             )
             for line in reversed(result.stdout.splitlines()):
