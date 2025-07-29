@@ -84,6 +84,7 @@ cat > $SUDOERS_FILE << EOF
 # Это правило разрешает пользователю $OLLAMA_USER читать логи службы ollama
 # без пароля. Это необходимо для работы Ollama_InfluxDB.
 $OLLAMA_USER ALL=(ALL) NOPASSWD: $COMMAND_PATH --unit=ollama *
+$OLLAMA_USER ALL=(ALL) NOPASSWD: $COMMAND_PATH --unit=ollama.service *
 EOF
 
 # Устанавливаем правильные права на файл sudoers
