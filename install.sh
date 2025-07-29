@@ -74,6 +74,24 @@ StandardError=journal
 WantedBy=multi-user.target
 EOF
 
+# Настраиваем sudoers для безопасного доступа к логам
+echo "INFO: Настройка sudoers для пользователя $OLLAMA_USER..."
+SUDOERS_FILE="/etc/sudoers.d/ollama_translator_sudo"
+COMMAND_PATH=$(which journalctl)
+
+# Создаем правило, разрешающее выполнение только одной конкретной команды
+cat > $SUDOERS_FILE << EOF
+# Это правило разрешает пользователю $OLLAMA_USER читать логи службы ollama
+# без пароля. Это необходимо для работы Ollama_InfluxDB.
+$OLLAMA_USER ALL=(ALL) NOPASSWD: $COMMAND_PATH --unit=ollama --output=json --no-pager
+$OLLAMA_USER ALL=(ALL) NOPASSWD: $COMMAND_PATH --unit=ollama -n 200 --no-pager
+EOF
+
+# Устанавливаем правильные права на файл sudoers
+chmod 0440 $SUDOERS_FILE
+
+echo "✅ Правило sudoers создано в $SUDOERS_FILE"
+
 # Перезагружаем systemd
 systemctl daemon-reload
 systemctl enable $SERVICE_NAME

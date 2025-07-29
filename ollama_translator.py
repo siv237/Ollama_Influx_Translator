@@ -192,7 +192,7 @@ class OllamaInfluxTranslator:
             since_str = since_time.strftime('%Y-%m-%d %H:%M:%S')
             self.logger.info(f"🚀 First run. Requesting logs for the last 24 hours since {since_str}")
 
-        cmd = ['journalctl', '--unit=ollama', f'--since={since_str}', '--output=json', '--no-pager']
+        cmd = ['sudo', 'journalctl', '--unit=ollama', f'--since={since_str}', '--output=json', '--no-pager']
         
         try:
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
