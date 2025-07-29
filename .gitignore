@@ -1,0 +1,12 @@
+# Файлы конфигурации
+config.env
+
+# Виртуальное окружение
+venv/
+
+# Логи
+translator.log
+
+# Кэш Python
+__pycache__/
+*.pyc

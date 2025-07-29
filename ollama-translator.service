@@ -1,0 +1,19 @@
+[Unit]
+Description=Ollama to InfluxDB Log Translator
+After=network.target influxdb.service
+Wants=influxdb.service
+
+[Service]
+Type=simple
+User=ollama
+Group=ollama
+WorkingDirectory=/home/user/prj/Ollama_InfluxDB
+Environment=PATH=/usr/bin:/usr/local/bin
+ExecStart=/usr/bin/python3 /home/user/prj/Ollama_InfluxDB/ollama_log_translator.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
