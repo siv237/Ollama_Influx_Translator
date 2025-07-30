@@ -63,10 +63,10 @@ union(tables: [requests, session_starts_with_models])
   |> sort(columns: ["_time"])
   |> fill(column: "session_label", usePrevious: true)
   |> filter(fn: (r) => r.endpoint != "" and exists r.session_label)
-  |> rename(columns: {_time: "request_start"})
+  |> rename(columns: {_time: "request_end"})
   |> map(fn: (r) => ({
-      _time: r.request_start,
-      endTime: experimental.addDuration(d: duration(v: int(v: r.latency_ms * 1000000.0)), to: r.request_start),
+      _time: experimental.subDuration(d: duration(v: int(v: r.latency_ms * 1000000.0)), from: r.request_end),
+      endTime: r.request_end,
       _value: r.endpoint, 
       session_label: r.session_label
   }))
