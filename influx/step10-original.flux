@@ -6,7 +6,7 @@ import "experimental"
 // Это гарантирует, что мы всегда найдем начало сессии, независимо от зума.
 sessions_with_sha_and_ctx = from(bucket: "ollama-logs")
   |> range(start: 0)
-  |> filter(fn: (r) => r._measurement == "ollama_logs" and r._field == "message" and r.host == "user-MS-7D18")
+  |> filter(fn: (r) => r._measurement == "ollama_logs" and r._field == "message" and r.host == "${host}")
   |> filter(fn: (r) => strings.containsStr(v: r._value, substr: "starting llama server"))
   |> map(fn: (r) => {
       sha_regex = regexp.compile(v: "sha256-([0-9a-f]{64})")
@@ -21,7 +21,7 @@ sessions_with_sha_and_ctx = from(bucket: "ollama-logs")
 
 model_inventory = from(bucket: "ollama-logs")
   |> range(start: 0)
-  |> filter(fn: (r) => r._measurement == "ollama_model_inventory" and r.host == "user-MS-7D18")
+  |> filter(fn: (r) => r._measurement == "ollama_model_inventory" and r.host == "${host}")
   |> last()
   |> pivot(rowKey:["model_name"], columnKey:["_field"], valueColumn:"_value")
   |> keep(columns:["model_name", "sha256"])
@@ -41,8 +41,8 @@ session_starts_with_models = join(
 
 // --- Часть 2: Получаем API запросы (с узким диапазоном Grafana) ---
 requests = from(bucket: "ollama-logs")
-  |> range(start: -48h, stop: now())
-  |> filter(fn: (r) => r._measurement == "ollama_logs" and r._field == "message" and r.host == "user-MS-7D18")
+  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
+  |> filter(fn: (r) => r._measurement == "ollama_logs" and r._field == "message" and r.host == "${host}")
   |> filter(fn: (r) => strings.containsStr(v: r._value, substr: "[GIN]") and strings.containsStr(v: r._value, substr: "\"/api/chat\""))
   |> map(fn: (r) => {
       parts = strings.split(v: r._value, t: "|")
@@ -71,4 +71,3 @@ union(tables: [requests, session_starts_with_models])
       series: r.session_label
   }))
   |> group(columns: ["series"])
-  |> yield(name: "step10_original_output")
