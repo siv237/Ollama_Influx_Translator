@@ -51,8 +51,8 @@ requests = from(bucket: "ollama-logs")
       numeric_part_str = regexp.findString(r: re_numeric, v: latency_str)
       numeric_val = if numeric_part_str != "" then float(v: numeric_part_str) else 0.0
       multiplier = if strings.containsStr(v: latency_str, substr: "ms") then 1.0 else if strings.containsStr(v: latency_str, substr: "µs") then 0.001 else if strings.containsStr(v: latency_str, substr: "s") then 1000.0 else 0.0
-      endpoint_part = strings.trimSpace(v: parts[4])
-      endpoint = strings.split(v: endpoint_part, t: "\"")[1]
+      ip_raw = strings.trimSpace(v: parts[3])
+      endpoint = ip_raw
       return { _time: r._time, endpoint: endpoint, latency_ms: numeric_val * multiplier, status: int(v: strings.trimSpace(v: parts[1])) }
   })
   |> keep(columns: ["_time", "endpoint", "latency_ms", "status"])
