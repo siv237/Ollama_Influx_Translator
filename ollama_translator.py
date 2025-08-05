@@ -70,7 +70,7 @@ class OllamaInfluxTranslator:
                 capture_output=True, text=True, check=True
             )
             for line in reversed(result.stdout.splitlines()):
-                # New log format search
+                # First, try to find OLLAMA_MODELS line (existing method)
                 if 'OLLAMA_MODELS:' in line:
                     match = re.search(r'OLLAMA_MODELS:([^\s\]]+)', line)
                     if match:
@@ -79,6 +79,22 @@ class OllamaInfluxTranslator:
                         self.logger.info(f"✅ Found OLLAMA_MODELS path: {models_path}")
                         self.logger.info(f"Manifests path set to: {manifests_path}")
                         return manifests_path
+                
+                # Second, try to find --model parameter in starting llama server line
+                if 'starting llama server' in line and '--model' in line:
+                    # Extract the model path from --model parameter
+                    model_match = re.search(r'--model\s+([^\s]+)', line)
+                    if model_match:
+                        model_path = model_match.group(1)
+                        # Extract base directory by removing the last part (blob hash)
+                        # /usr/share/ollama/.ollama/models/blobs/sha256-...
+                        # Should become: /usr/share/ollama/.ollama/models/
+                        if '/blobs/' in model_path:
+                            models_path = model_path.split('/blobs/')[0]
+                            manifests_path = os.path.join(models_path, 'manifests')
+                            self.logger.info(f"✅ Found OLLAMA_MODELS path from --model parameter: {models_path}")
+                            self.logger.info(f"Manifests path set to: {manifests_path}")
+                            return manifests_path
         except (subprocess.CalledProcessError, FileNotFoundError) as e:
             self.logger.error(f"Error reading journal for ollama.service: {e}")
         except Exception as e:
