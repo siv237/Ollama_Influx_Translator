@@ -222,6 +222,20 @@ class OllamaInfluxTranslator:
             self.logger.error(f"An unexpected error occurred while fetching logs: {e}", exc_info=True)
             return []
 
+    def clean_message(self, message):
+        """Clean message from binary and ugly characters"""
+        if isinstance(message, str):
+            # Remove all non-printable characters
+            import string
+            clean = ''.join(char for char in message if char in string.printable)
+            return clean
+        elif isinstance(message, (list, dict)):
+            # If this is a data structure, convert to JSON
+            return json.dumps(message, ensure_ascii=False)
+        else:
+            # For other data types - just convert to string
+            return str(message)
+
     def process_logs(self):
         """Main log processing logic."""
         log_lines = self.get_logs_from_journal()
@@ -245,18 +259,22 @@ class OllamaInfluxTranslator:
                     # This ensures no logs are dropped.
                     message = json.dumps(log_entry)
                     self.logger.warning(f"'MESSAGE' not found, using full JSON log entry as message.")
+                
+                # Clean message from binary characters
+                clean_message = self.clean_message(message)
+                
                 entry_timestamp = datetime.fromtimestamp(sec, tz=timezone.utc) + timedelta(microseconds=micros)
 
 
 
                 # Create a hash for server-side deduplication
-                msg_hash = hashlib.sha256(f"{timestamp_us}:{message}".encode()).hexdigest()
+                msg_hash = hashlib.sha256(f"{timestamp_us}:{clean_message}".encode()).hexdigest()
 
                 point = Point("ollama_logs") \
                     .tag("source", "systemd") \
                      .tag("host", self.host) \
                     .tag("msg_hash", msg_hash) \
-                    .field("message", message) \
+                    .field("message", clean_message) \
                     .time(entry_timestamp, WritePrecision.US)
                 
                 points_batch.append(point)
