@@ -265,7 +265,8 @@ class OllamaInfluxTranslator:
                 
                 entry_timestamp = datetime.fromtimestamp(sec, tz=timezone.utc) + timedelta(microseconds=micros)
 
-
+                # Extract PID directly from the journal entry if present
+                pid = log_entry.get('_PID')
 
                 # Create a hash for server-side deduplication
                 msg_hash = hashlib.sha256(f"{timestamp_us}:{clean_message}".encode()).hexdigest()
@@ -276,6 +277,10 @@ class OllamaInfluxTranslator:
                     .tag("msg_hash", msg_hash) \
                     .field("message", clean_message) \
                     .time(entry_timestamp, WritePrecision.US)
+                
+                # Add PID as a field if found
+                if pid:
+                    point = point.field("pid", pid)
                 
                 points_batch.append(point)
 
